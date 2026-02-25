@@ -1,6 +1,6 @@
 # CHTTPServer
 
-A simple, lightweight HTTP server written in C. This is my first ever C project.
+A simple, lightweight HTTP server written in C. This is one of my first ever C projects.
 This probably has a lot of bugs, so I don't recommend you use this in production.
 
 ## How to Use
