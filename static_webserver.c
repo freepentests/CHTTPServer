@@ -5,86 +5,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-typedef struct MimeType
-{
-	char *extension;
-	char *mime_type;
-} mimetype_t;
-
-const mimetype_t mime_types[] = 
-{
-	{".txt",  "text/plain"},
-	{".html", "text/html"},
-	{".htm",  "text/html"},
-	{".css",  "text/css"},
-	{".js",   "application/javascript"},
-	{".jpg",  "image/jpeg"},
-	{".jpeg", "image/jpeg"},
-	{".png",  "image/png"},
-	{".gif",  "image/gif"},
-	{".bmp",  "image/bmp"},
-	{".pdf",  "application/pdf"},
-	{".doc",  "application/msword"},
-	{".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
-	{".xls",  "application/vnd.ms-excel"},
-	{".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-	{".zip",  "application/zip"},
-	{".gz",   "application/gzip"},
-	{".tar",  "application/x-tar"},
-	{".mp3",  "audio/mpeg"},
-	{".wav",  "audio/wav"},
-	{".mp4",  "video/mp4"},
-	{".mov",  "video/quicktime"},
-	{".avi",  "video/x-msvideo"},
-	{NULL, NULL}
-};
-
-char *get_extension(char *filename)
-{
-	char *ext = strrchr(filename, '.');
-	if (ext == NULL)
-	{
-		return NULL;
-	}
-
-	return ext;
-}
-
-char *get_mime_type(char *filename)
-{
-	char *ext = get_extension(filename);
-
-	if (ext == NULL)
-	{
-		return "application/octet-stream";
-	}
-
-	for (int i = 0; i < sizeof(mime_types) / sizeof(mime_types[0]); i++)
-	{
-		if (mime_types[i].extension == NULL) continue;
-		if (strcmp(mime_types[i].extension, ext) == 0)
-		{
-			return mime_types[i].mime_type;
-		}
-	}
-
-	return "application/octet-stream";
-}
-
-size_t get_file_length(char *filename)
-{
-    size_t file_length = 0;
-
-    FILE *fptr = fopen(filename, "r");
-
-    if (fptr == NULL) return 0;
-
-    while (fgetc(fptr) != EOF) file_length++;
-
-    fclose(fptr);
-
-    return file_length;
-}
+#include "./utils.c"
 
 void send_file(int *socket, char *filename)
 {
@@ -123,14 +44,20 @@ void send_file(int *socket, char *filename)
 	fclose(fptr);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+	if (argc != 2)
+	{
+		printf("You must specify a port number in your arguments. Example usage:\n\n./program 8080\n^ Listens on port 80\n");
+		return EXIT_FAILURE;
+	}
+
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in serv_addr;
 	int addr_len = sizeof(serv_addr);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(6771);
+	serv_addr.sin_port = htons(atoi(argv[1]));
 
 	bind(sockfd, (struct sockaddr *)&serv_addr, addr_len);
 	listen(sockfd, 3);
@@ -146,7 +73,13 @@ int main(void)
 		sscanf(buffer, "%3s %256s %64s", method, path, protocol);
 
 		char dir[263] = "static";
-		strncat(dir, path, strlen(path));
+		if (strcmp(path, "/") == 0)
+		{
+			strcat(dir, "/index.html");
+		} else 
+		{
+			strncat(dir, path, strlen(path));
+		}
 		send_file(&new_socket, dir);
 		dir[263] = '\0';
 
