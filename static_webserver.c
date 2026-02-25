@@ -5,8 +5,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-// Warning: This code has memory issues that can cause buffer overflow
-
 typedef struct MimeType
 {
 	char *extension;
@@ -87,6 +85,7 @@ size_t get_file_length(char *filename)
 
 void send_file(int *socket, char *filename)
 {
+	printf("%s\n", filename);
 	FILE *fptr = fopen(filename, "r");
 
 	if (fptr == NULL)
@@ -117,7 +116,7 @@ int main(void)
 	int addr_len = sizeof(serv_addr);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(4444);
+	serv_addr.sin_port = htons(4457);
 
 	bind(sockfd, (struct sockaddr *)&serv_addr, addr_len);
 	listen(sockfd, 3);
@@ -128,13 +127,15 @@ int main(void)
 
 		char buffer[2048];
 		recv(new_socket, buffer, 2048, 0);
-		char method[64], path[128], protocol[64];
+		char method[3], path[256], protocol[64];
 
-		sscanf(buffer, "%s %s %s", method, path, protocol);
+		sscanf(buffer, "%3s %256s %64s", method, path, protocol);
 
-		char static_dir[128] = "static";
-		strcat(static_dir, path);
-		send_file(&new_socket, static_dir);
+		char dir[263] = "static";
+		printf("%s\n", path);
+		strncat(dir, path, strlen(path));
+		send_file(&new_socket, dir);
+		dir[263] = '\0';
 
 		close(new_socket);
 	}
