@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "./utils.c"
+#include "./utils.h"
 
 void send_file(int *socket, char *filename)
 {
