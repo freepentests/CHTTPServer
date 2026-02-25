@@ -59,8 +59,9 @@ char *get_mime_type(char *filename)
 		return "application/octet-stream";
 	}
 
-	for (int i = 0; i < sizeof(mime_types); i++)
+	for (int i = 0; i < sizeof(mime_types) / sizeof(mime_types[0]); i++)
 	{
+		if (mime_types[i].extension == NULL) continue;
 		if (strcmp(mime_types[i].extension, ext) == 0)
 		{
 			return mime_types[i].mime_type;
@@ -76,6 +77,8 @@ size_t get_file_length(char *filename)
 
     FILE *fptr = fopen(filename, "r");
 
+    if (fptr == NULL) return 0;
+
     while (fgetc(fptr) != EOF) file_length++;
 
     fclose(fptr);
@@ -85,7 +88,6 @@ size_t get_file_length(char *filename)
 
 void send_file(int *socket, char *filename)
 {
-	printf("%s\n", filename);
 	FILE *fptr = fopen(filename, "r");
 
 	if (fptr == NULL)
@@ -116,7 +118,7 @@ int main(void)
 	int addr_len = sizeof(serv_addr);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(4457);
+	serv_addr.sin_port = htons(6767);
 
 	bind(sockfd, (struct sockaddr *)&serv_addr, addr_len);
 	listen(sockfd, 3);
@@ -132,7 +134,6 @@ int main(void)
 		sscanf(buffer, "%3s %256s %64s", method, path, protocol);
 
 		char dir[263] = "static";
-		printf("%s\n", path);
 		strncat(dir, path, strlen(path));
 		send_file(&new_socket, dir);
 		dir[263] = '\0';
