@@ -88,6 +88,13 @@ size_t get_file_length(char *filename)
 
 void send_file(int *socket, char *filename)
 {
+	if (strstr(filename, ".."))
+	{
+		send(*socket, "HTTP/1.1 400 Bad Request\nContent-Size: 30\nContent-Type: text/html\nServer: custom c serv\ndon't try to do path traversal", 118, 0);
+		return;
+
+	}
+
 	FILE *fptr = fopen(filename, "r");
 
 	if (fptr == NULL)
@@ -99,6 +106,11 @@ void send_file(int *socket, char *filename)
 	size_t content_length = get_file_length(filename);
 
 	char *content = malloc(content_length);
+	if (content == NULL)
+	{
+		fclose(fptr);
+		return;
+	}
 	fread(content, sizeof(char), content_length, fptr);
 
 	char buffer[4096];
@@ -118,7 +130,7 @@ int main(void)
 	int addr_len = sizeof(serv_addr);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(6767);
+	serv_addr.sin_port = htons(6771);
 
 	bind(sockfd, (struct sockaddr *)&serv_addr, addr_len);
 	listen(sockfd, 3);
